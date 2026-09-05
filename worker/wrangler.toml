@@ -1,25 +1,21 @@
 name = "secure-lecture-worker"
 main = "src/index.js"
 compatibility_date = "2026-09-05"
-type = "service"
+workers_dev = false
 
-# Environment variables binding
-[env.production]
-routes = [
-    { pattern = "yourdomain.com/api/*", zone_name = "yourdomain.com" }
-]
+# Worker handles only the API path.
+# The main website will be served separately by Cloudflare Pages.
+[[routes]]
+pattern = "mahata.site/api/*"
+zone_name = "mahata.site"
 
-# D1 Database Binding
+# D1 Database
 [[d1_databases]]
 binding = "DB"
 database_name = "lecture_db"
-database_id = "YOUR_DATABASE_ID"
+database_id = "613bd0cc-7df5-4414-ad14-7351fc828939"
 
-# Cloudflare KV (for rate limiting, optional)
+# Cloudflare KV - used only for operational rate limiting
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "YOUR_KV_NAMESPACE_ID"
-
-[build]
-command = "npm install"
-cwd = "."
+id = "79c26de902fd47e98e8a9bdf51840110"
