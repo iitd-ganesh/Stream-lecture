@@ -311,9 +311,118 @@ async function handleVisitCount(request, env) {
 }
 
 /**
- * Handle OPTIONS requests (CORS preflight)
+ * POST /api/page-view
+ * Track a page view (every page load counts as a view)
  */
-function handleOptions(origin) {
+async function handlePageView(request, env) {
+    const origin = request.headers.get('Origin');
+
+    // Validate origin
+    if (!origin || !isOriginAllowed(origin)) {
+        return new Response(JSON.stringify({ error: "Unauthorized origin" }), {
+            status: 403,
+            headers: createHeaders(origin),
+        });
+    }
+
+    try {
+        // Parse request body
+        const payload = await validateJSON(request);
+        if (!payload) {
+            return new Response(JSON.stringify({ error: "Invalid request" }), {
+                status: 400,
+                headers: createHeaders(origin),
+            });
+        }
+
+        const { lectureId } = payload;
+
+        // Validate lecture ID
+        if (!lectureId || lectureId !== CONFIG.LECTURE_ID) {
+            return new Response(JSON.stringify({ error: "Lecture not found" }), {
+                status: 404,
+                headers: createHeaders(origin),
+            });
+        }
+
+        // Get database
+        const db = env.DB;
+        if (!db) {
+            console.error("Database not bound");
+            return new Response(JSON.stringify({ success: true }), {
+                status: 200,
+                headers: createHeaders(origin),
+            });
+        }
+
+        try {
+            // Insert page view - each page load creates a new row
+            await db.prepare(`
+                INSERT INTO lecture_page_views (lecture_id, created_at)
+                VALUES (?, CURRENT_TIMESTAMP)
+            `).bind(lectureId).run();
+
+            return new Response(JSON.stringify({ success: true }), {
+                status: 200,
+                headers: createHeaders(origin),
+            });
+        } catch (dbError) {
+            console.error("Database error:", dbError);
+            // Return success even if DB fails - don't block page
+            return new Response(JSON.stringify({ success: true }), {
+                status: 200,
+                headers: createHeaders(origin),
+            });
+        }
+
+    } catch (error) {
+        console.error("Page view endpoint error:", error);
+        return new Response(JSON.stringify({ success: false }), {
+            status: 500,
+            headers: createHeaders(origin),
+        });
+    }
+}
+
+/**
+ * GET /api/view-count
+ * Get total page view count for this lecture
+ */
+async function handleViewCount(request, env) {
+    const origin = request.headers.get('Origin');
+
+    try {
+        const db = env.DB;
+        if (!db) {
+            return new Response(JSON.stringify({ viewCount: 0 }), {
+                status: 200,
+                headers: createHeaders(origin),
+            });
+        }
+
+        // Get total page view count for this lecture
+        const result = await db.prepare(`
+            SELECT COUNT(*) as count FROM lecture_page_views WHERE lecture_id = ?
+        `).bind(CONFIG.LECTURE_ID).first();
+
+        return new Response(JSON.stringify({
+            lectureId: CONFIG.LECTURE_ID,
+            viewCount: result?.count || 0,
+        }), {
+            status: 200,
+            headers: createHeaders(origin),
+        });
+
+    } catch (error) {
+        console.error("View count error:", error);
+        return new Response(JSON.stringify({ viewCount: 0 }), {
+            status: 200,
+            headers: createHeaders(origin),
+        });
+    }
+}
+
+/**
     return new Response(null, {
         status: 204,
         headers: createHeaders(origin),
@@ -335,6 +444,14 @@ async function handleRequest(request, env) {
     // Route to appropriate handler
     if (url.pathname === '/api/visit' && request.method === 'POST') {
         return handleVisit(request, env);
+    }
+
+    if (url.pathname === '/api/page-view' && request.method === 'POST') {
+        return handlePageView(request, env);
+    }
+
+    if (url.pathname === '/api/view-count' && request.method === 'GET') {
+        return handleViewCount(request, env);
     }
 
     if (url.pathname === '/api/online-count' && request.method === 'GET') {
