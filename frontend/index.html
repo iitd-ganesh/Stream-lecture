@@ -8,6 +8,8 @@
     <title>Lecture</title>
     <link rel="stylesheet" href="style.css">
     <script defer src="app.js"></script>
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
     <main class="lecture-container">
@@ -22,7 +24,7 @@
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">Date:</span>
-                    <span class="meta-value" id="lecture-date">05 September 2026</span>
+                    <span class="meta-value">05 September 2026</span>
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">Duration:</span>
@@ -33,33 +35,135 @@
 
         <section class="video-section">
             <div id="video-container" class="video-container">
-                <div id="loading-state" class="loading-state" style="display: none;">
+                <div id="loading-state" class="loading-state">
                     <p>Loading lecture video...</p>
                 </div>
                 <div id="error-state" class="error-state" style="display: none;">
                     <p id="error-message">Unable to load the lecture video. Please refresh the page.</p>
                     <button id="retry-button" class="retry-button">Retry</button>
                 </div>
+
+                <!-- YouTube Player Container -->
                 <div id="player-wrapper" style="display: none;">
-                    <!-- YouTube iframe will be injected here -->
+                    <!-- Visual mask - covers the native YouTube title/channel area -->
+                    <div class="youtube-top-mask" id="youtubeTopMask"></div>
+
+                    <!-- Click shield - intercepts pointer events on the top area -->
+                    <div class="youtube-top-click-shield" id="youtubeTopClickShield"></div>
+
+                    <div id="youtube-player" class="youtube-player-container">
+                        <!-- YouTube iframe will be injected here by API -->
+                    </div>
+
+                    <!-- Custom Controls Overlay -->
+                    <div class="player-controls">
+                        <!-- Progress Bar -->
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-fill" id="progressFill"></div>
+                                <div class="progress-handle" id="progressHandle"></div>
+                            </div>
+                        </div>
+
+                        <!-- Control Buttons Row -->
+                        <div class="controls-bottom">
+                            <!-- Time Display -->
+                            <div class="time-display">
+                                <span id="currentTime">0:00</span>
+                                <span class="time-separator">/</span>
+                                <span id="duration">0:00</span>
+                            </div>
+
+                            <!-- Main Controls -->
+                            <div class="main-controls">
+                                <!-- Back 10s -->
+                                <button class="control-btn backward-btn" id="backwardBtn" title="Back 10 seconds" aria-label="Back 10 seconds">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M11 5V1l-5 5 5 5v-4c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L4.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v4l5-5-5-5v4z"/>
+                                    </svg>
+                                    <span class="control-label">10s</span>
+                                </button>
+
+                                <!-- Play/Pause -->
+                                <button class="control-btn play-pause-btn" id="playPauseBtn" title="Play" aria-label="Play">
+                                    <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    <svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                                    </svg>
+                                </button>
+
+                                <!-- Forward 20s -->
+                                <button class="control-btn forward-btn" id="forwardBtn" title="Forward 20 seconds" aria-label="Forward 20 seconds">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M13 5V1l5 5-5 5v-4c-3.31 0-6 2.69-6 6 0 1.01.25 1.97.7 2.8l-1.46 1.46C4.46 15.03 4 13.57 4 12c0-4.42 3.58-8 8-8zm0 14c3.31 0 6-2.69 6-6 0-1.01-.25-1.97-.7-2.8l1.46-1.46C19.54 8.97 20 10.43 20 12c0 4.42-3.58 8-8 8v4l-5-5 5-5v4z"/>
+                                    </svg>
+                                    <span class="control-label">20s</span>
+                                </button>
+
+                                <!-- Volume Control -->
+                                <div class="volume-control">
+                                    <button class="control-btn mute-btn" id="muteBtn" title="Mute" aria-label="Mute">
+                                        <svg id="volumeHighIcon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.26 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                                        </svg>
+                                        <svg id="volumeMutedIcon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                                            <path d="M16.6 13.72c.4-1 .6-2.06.6-3.22 0-6.5-5.4-11.77-12-11.77-1.16 0-2.25.2-3.22.6l2.36 2.36C5.02 1.82 6.42 1.5 8 1.5c5.02 0 9 3.98 9 9 0 1.58-.32 3.06-.9 4.42l2.5 2.5zM3 6.78l2.24 2.24C4.48 8.95 3.5 10.4 3.5 12c0 2.65 2.15 4.8 4.8 4.8 1.6 0 3.05-.98 3.69-2.4L16.38 20 17.78 18.6 4.4 5.22 3 6.78zM11.5 21c1.16 0 2.25-.2 3.22-.6l-2.36-2.36C18.98 17.18 20 15.58 20 14c0-5.02-3.98-9-9-9-1.58 0-3.06.32-4.42.9L3.1 3.5c1.4-1 3.1-1.5 5-1.5 6.63 0 12 5.27 12 11.77 0 1.73-.3 3.4-.88 4.94l2.58 2.58c.6-1.6.88-3.3.88-5.02 0-7.68-6.2-13.77-13.77-13.77-1.92 0-3.73.36-5.42 1.06L5.12 2.74c1.5-.4 3.08-.6 4.88-.6 6.63 0 12 5.27 12 11.77 0 2.19-.56 4.26-1.55 6.07l2.43 2.43C22.56 20.45 23 18.46 23 16.14c0-7.68-6.2-13.77-13.77-13.77-2.6 0-5.05.7-7.15 1.93L3 6.78z"/>
+                                        </svg>
+                                    </button>
+                                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100" title="Volume">
+                                </div>
+
+                                <!-- Speed Control -->
+                                <div class="speed-control">
+                                    <select class="speed-selector" id="speedSelector" title="Playback speed">
+                                        <option value="0.5">0.5x</option>
+                                        <option value="0.75">0.75x</option>
+                                        <option value="1" selected>1x</option>
+                                        <option value="1.25">1.25x</option>
+                                        <option value="1.5">1.5x</option>
+                                        <option value="2">2x</option>
+                                    </select>
+                                </div>
+
+                                <!-- Captions -->
+                                <button class="control-btn captions-btn" id="captionsBtn" title="Captions (C)" aria-label="Captions">
+                                    <svg id="captionsIcon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V6c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v4z"/>
+                                    </svg>
+                                </button>
+
+                                <!-- Fullscreen -->
+                                <button class="control-btn fullscreen-btn" id="fullscreenBtn" title="Fullscreen" aria-label="Fullscreen">
+                                    <svg id="fullscreenIcon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                                    </svg>
+                                    <svg id="fullscreenExitIcon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                                        <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
         <footer class="lecture-footer">
-            <p>This lecture is hosted on YouTube.</p>
+            <p>This lecture is hosted on YouTube with custom player controls.</p>
         </footer>
     </main>
 
     <script>
         // Configuration - these values are safe to expose
         const LECTURE_CONFIG = {
-            id: "Online Lecture 2",
-            title: "Estimation of Capital investment",
-            professor: "Prof. Shaikh Z. Ahammad",
+            id: "lecture-01",
+            title: "Estimation of Capital Investment",
+            professor: "Dr. Shaikh Z. Ahammad",
             date: "2026-09-05",
             duration: "1:20:50",
-            youtubeVideoId: "WZxMQuiXjsE" // Unlisted YouTube video ID
+            youtubeVideoId: "WZxMQuiXjsE"  // Unlisted YouTube video ID
         };
     </script>
 </body>
