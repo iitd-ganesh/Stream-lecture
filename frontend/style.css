@@ -71,6 +71,22 @@ p {
     margin-bottom: var(--spacing-sm);
 }
 
+/* RTC Clock - Top Left Corner */
+.rtc-clock {
+    position: fixed;
+    top: var(--spacing-md);
+    left: var(--spacing-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    z-index: 100;
+    background-color: var(--color-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+}
+
 /* Main container */
 .lecture-container {
     max-width: 900px;
@@ -612,6 +628,12 @@ p {
 
 .lecture-footer p {
     margin: 0;
+    margin-bottom: var(--spacing-xs);
+}
+
+#viewCountDisplay {
+    color: var(--color-text);
+    font-weight: 500;
 }
 
 /* Fullscreen Styles */

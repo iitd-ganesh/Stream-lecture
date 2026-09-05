@@ -11,6 +11,16 @@ CREATE TABLE IF NOT EXISTS lecture_visits (
 -- Create index for efficient visitor count queries
 CREATE INDEX IF NOT EXISTS idx_lecture_visits_lecture_id ON lecture_visits(lecture_id);
 
+-- Page view counter - counts every page load (not unique visitors)
+CREATE TABLE IF NOT EXISTS lecture_page_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lecture_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for efficient page view count queries
+CREATE INDEX IF NOT EXISTS idx_lecture_page_views_lecture_id ON lecture_page_views(lecture_id);
+
 -- Optional: View for visitor statistics (read-only)
 CREATE VIEW IF NOT EXISTS visitor_stats AS
 SELECT

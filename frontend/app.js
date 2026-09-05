@@ -20,9 +20,8 @@ class LecturePlayer {
         this.isMuted = false;
         this.captionsEnabled = false;
 
-        // Realtime stats intervals
+        // RTC clock interval
         this.clockIntervalId = null;
-        this.onlineCountIntervalId = null;
 
         // Initialize top click shield
         this.setupTopClickShield();
@@ -106,8 +105,16 @@ class LecturePlayer {
      */
     async init() {
         try {
-            // Initialize realtime stats immediately
-            this.initializeRealtimeStats();
+            // Initialize RTC clock
+            this.initializeClock();
+
+            // Track page view (fire and forget)
+            this.trackPageView().catch(err => {
+                console.warn('Failed to track page view:', err);
+            });
+
+            // Load view count from backend
+            this.loadViewCount();
 
             // Track visitor visit (fire and forget - don't block on this)
             this.trackVisit().catch(err => {
@@ -129,19 +136,11 @@ class LecturePlayer {
     }
 
     /**
-     * Initialize realtime stats: clock, online count, and visited count
+     * Initialize RTC clock - updates every second
      */
-    initializeRealtimeStats() {
-        // Start clock update (every second)
+    initializeClock() {
         this.updateClock();
         this.clockIntervalId = setInterval(() => this.updateClock(), 1000);
-
-        // Load visited count from localStorage
-        this.loadVisitedCount();
-
-        // Fetch online count from backend and update periodically
-        this.updateOnlineCount();
-        this.onlineCountIntervalId = setInterval(() => this.updateOnlineCount(), 2000);
     }
 
     /**
@@ -167,11 +166,35 @@ class LecturePlayer {
     }
 
     /**
-     * Fetch and update online visitor count from backend
+     * Track a page view (called once per page load)
      */
-    async updateOnlineCount() {
+    async trackPageView() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/online-count`, {
+            const response = await fetch(`${this.apiBaseUrl}/api/page-view`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    lectureId: this.config.id,
+                }),
+                credentials: 'omit',
+            });
+
+            if (!response.ok) {
+                console.warn('Failed to track page view:', response.status);
+            }
+        } catch (error) {
+            console.error('Error tracking page view:', error);
+        }
+    }
+
+    /**
+     * Load view count from backend and display in footer
+     */
+    async loadViewCount() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/view-count`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -181,68 +204,15 @@ class LecturePlayer {
 
             if (response.ok) {
                 const data = await response.json();
-                const onlineCount = data.onlineCount || 0;
+                const viewCount = data.viewCount || 0;
 
-                const onlineElement = document.getElementById('onlineCount');
-                if (onlineElement) {
-                    onlineElement.textContent = onlineCount;
+                const viewCountElement = document.getElementById('viewCount');
+                if (viewCountElement) {
+                    viewCountElement.textContent = viewCount;
                 }
             }
         } catch (error) {
-            console.warn('Failed to fetch online count:', error);
-        }
-    }
-
-    /**
-     * Load visited count from localStorage
-     * The backend tracks unique visitors via D1 database
-     */
-    loadVisitedCount() {
-        try {
-            // Check if we have a cached visited count
-            const cachedCount = localStorage.getItem('lecture-visited-count');
-
-            if (cachedCount) {
-                const visitedElement = document.getElementById('visitedCount');
-                if (visitedElement) {
-                    visitedElement.textContent = cachedCount;
-                }
-            }
-
-            // Fetch the actual count from backend
-            this.fetchVisitedCount();
-        } catch (error) {
-            console.warn('Failed to load visited count:', error);
-        }
-    }
-
-    /**
-     * Fetch visited count from backend (public endpoint)
-     */
-    async fetchVisitedCount() {
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/api/visit-count`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'omit',
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                const visitCount = data.visitCount || 0;
-
-                // Cache locally
-                localStorage.setItem('lecture-visited-count', visitCount);
-
-                const visitedElement = document.getElementById('visitedCount');
-                if (visitedElement) {
-                    visitedElement.textContent = visitCount;
-                }
-            }
-        } catch (error) {
-            console.warn('Failed to fetch visited count:', error);
+            console.warn('Failed to load view count:', error);
         }
     }
 
@@ -843,9 +813,6 @@ class LecturePlayer {
         }
         if (this.clockIntervalId) {
             clearInterval(this.clockIntervalId);
-        }
-        if (this.onlineCountIntervalId) {
-            clearInterval(this.onlineCountIntervalId);
         }
         if (this.player) {
             this.player.destroy();

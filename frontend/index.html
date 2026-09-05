@@ -13,6 +13,11 @@
 </head>
 <body>
     <main class="lecture-container">
+        <!-- RTC Clock - Top Left -->
+        <div class="rtc-clock" id="rtcClock" title="Current local time">
+            🕐 <span id="clockTime">--:-- --</span>
+        </div>
+
         <header class="lecture-header">
             <p class="lecture-label">BBL732 LECTURE</p>
             <h1 class="lecture-title">Estimation of Capital Investment</h1>
@@ -30,19 +35,6 @@
                     <span class="meta-label">Duration:</span>
                     <span class="meta-value">1:20:50</span>
                 </div>
-            </div>
-
-            <!-- Realtime Stats Indicators -->
-            <div class="realtime-stats">
-                <span class="stat-item" id="clockStat" title="Current local time">
-                    🕐 <span id="clockTime">--:-- --</span>
-                </span>
-                <span class="stat-item" id="onlineStat" title="Currently online">
-                    🟢 <span id="onlineCount">0</span> online
-                </span>
-                <span class="stat-item" id="visitedStat" title="Total unique visitors">
-                    👁 <span id="visitedCount">0</span> visited
-                </span>
             </div>
         </header>
 
@@ -193,9 +185,11 @@
 
         <footer class="lecture-footer">
             <p>Made with ❤️ for learning and sharing  📧e-Mail: dbeb.mahata@gmail.com</p>
+            <p id="viewCountDisplay">👁 <span id="viewCount">0</span> viewed</p>
         </footer>
     </main>
 
+    
     <script>
         // Configuration - these values are safe to expose
         const LECTURE_CONFIG = {
