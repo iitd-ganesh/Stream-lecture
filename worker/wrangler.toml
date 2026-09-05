@@ -6,7 +6,7 @@ workers_dev = false
 # Worker handles only the API path.
 # The main website will be served separately by Cloudflare Pages.
 [[routes]]
-pattern = "mahata.site/api/*"
+pattern = "stream-lecture.mahata.site/api/*"
 zone_name = "mahata.site"
 
 # D1 Database

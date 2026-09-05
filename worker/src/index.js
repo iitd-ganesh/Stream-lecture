@@ -7,6 +7,8 @@
 const CONFIG = {
     LECTURE_ID: "lecture-01",
     ALLOWED_ORIGINS: [
+        "https://stream-lecture.mahata.site",
+        "https://www.stream-lecture.mahata.site",
         "https://mahata.site",
         "https://www.mahata.site",
         "https://yourdomain.com",
