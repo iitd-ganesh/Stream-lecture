@@ -237,6 +237,75 @@ async function handleAdminVisitorCount(request, env) {
 }
 
 /**
+ * GET /api/online-count
+ * Get current online visitor count (public)
+ */
+async function handleOnlineCount(request, env) {
+    try {
+        // In a real implementation, this would query a Durable Objects counter
+        // For now, return a reasonable estimate or 0
+        // TODO: Implement Durable Objects for realtime presence tracking
+
+        const onlineCount = 0; // Placeholder - implement with Durable Objects for production
+
+        return new Response(JSON.stringify({
+            onlineCount: onlineCount,
+        }), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Cache-Control': 'no-store, max-age=0',
+            },
+        });
+    } catch (error) {
+        console.error("Online count error:", error);
+        return new Response(JSON.stringify({ onlineCount: 0 }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+}
+
+/**
+ * GET /api/visit-count
+ * Get total unique visitor count (public)
+ */
+async function handleVisitCount(request, env) {
+    try {
+        const db = env.DB;
+        if (!db) {
+            return new Response(JSON.stringify({ visitCount: 0 }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+
+        // Get total unique visitor count for this lecture
+        const result = await db.prepare(`
+            SELECT COUNT(*) as count FROM lecture_visits WHERE lecture_id = ?
+        `).bind(CONFIG.LECTURE_ID).first();
+
+        return new Response(JSON.stringify({
+            lectureId: CONFIG.LECTURE_ID,
+            visitCount: result?.count || 0,
+        }), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Cache-Control': 'no-store, max-age=0',
+            },
+        });
+
+    } catch (error) {
+        console.error("Visit count error:", error);
+        return new Response(JSON.stringify({ visitCount: 0 }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+}
+
+/**
  * Handle OPTIONS requests (CORS preflight)
  */
 function handleOptions(origin) {
@@ -261,6 +330,14 @@ async function handleRequest(request, env) {
     // Route to appropriate handler
     if (url.pathname === '/api/visit' && request.method === 'POST') {
         return handleVisit(request, env);
+    }
+
+    if (url.pathname === '/api/online-count' && request.method === 'GET') {
+        return handleOnlineCount(request, env);
+    }
+
+    if (url.pathname === '/api/visit-count' && request.method === 'GET') {
+        return handleVisitCount(request, env);
     }
 
     if (url.pathname === '/api/admin/visitor-count' && request.method === 'GET') {

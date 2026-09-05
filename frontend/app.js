@@ -20,6 +20,10 @@ class LecturePlayer {
         this.isMuted = false;
         this.captionsEnabled = false;
 
+        // Realtime stats intervals
+        this.clockIntervalId = null;
+        this.onlineCountIntervalId = null;
+
         // Initialize top click shield
         this.setupTopClickShield();
 
@@ -102,6 +106,9 @@ class LecturePlayer {
      */
     async init() {
         try {
+            // Initialize realtime stats immediately
+            this.initializeRealtimeStats();
+
             // Track visitor visit (fire and forget - don't block on this)
             this.trackVisit().catch(err => {
                 console.warn('Failed to track visit:', err);
@@ -118,6 +125,124 @@ class LecturePlayer {
         } catch (error) {
             console.error('Failed to initialize player:', error);
             this.showError();
+        }
+    }
+
+    /**
+     * Initialize realtime stats: clock, online count, and visited count
+     */
+    initializeRealtimeStats() {
+        // Start clock update (every second)
+        this.updateClock();
+        this.clockIntervalId = setInterval(() => this.updateClock(), 1000);
+
+        // Load visited count from localStorage
+        this.loadVisitedCount();
+
+        // Fetch online count from backend and update periodically
+        this.updateOnlineCount();
+        this.onlineCountIntervalId = setInterval(() => this.updateOnlineCount(), 2000);
+    }
+
+    /**
+     * Update clock with current local time (12-hour format with AM/PM)
+     */
+    updateClock() {
+        const now = new Date();
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+
+        // Convert to 12-hour format
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const hoursStr = String(hours).padStart(2, '0');
+
+        const timeString = `${hoursStr}:${minutes} ${ampm}`;
+
+        const clockElement = document.getElementById('clockTime');
+        if (clockElement) {
+            clockElement.textContent = timeString;
+        }
+    }
+
+    /**
+     * Fetch and update online visitor count from backend
+     */
+    async updateOnlineCount() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/online-count`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'omit',
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const onlineCount = data.onlineCount || 0;
+
+                const onlineElement = document.getElementById('onlineCount');
+                if (onlineElement) {
+                    onlineElement.textContent = onlineCount;
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to fetch online count:', error);
+        }
+    }
+
+    /**
+     * Load visited count from localStorage
+     * The backend tracks unique visitors via D1 database
+     */
+    loadVisitedCount() {
+        try {
+            // Check if we have a cached visited count
+            const cachedCount = localStorage.getItem('lecture-visited-count');
+
+            if (cachedCount) {
+                const visitedElement = document.getElementById('visitedCount');
+                if (visitedElement) {
+                    visitedElement.textContent = cachedCount;
+                }
+            }
+
+            // Fetch the actual count from backend
+            this.fetchVisitedCount();
+        } catch (error) {
+            console.warn('Failed to load visited count:', error);
+        }
+    }
+
+    /**
+     * Fetch visited count from backend (public endpoint)
+     */
+    async fetchVisitedCount() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/visit-count`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'omit',
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const visitCount = data.visitCount || 0;
+
+                // Cache locally
+                localStorage.setItem('lecture-visited-count', visitCount);
+
+                const visitedElement = document.getElementById('visitedCount');
+                if (visitedElement) {
+                    visitedElement.textContent = visitCount;
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to fetch visited count:', error);
         }
     }
 
@@ -715,6 +840,12 @@ class LecturePlayer {
     destroy() {
         if (this.updateIntervalId) {
             clearInterval(this.updateIntervalId);
+        }
+        if (this.clockIntervalId) {
+            clearInterval(this.clockIntervalId);
+        }
+        if (this.onlineCountIntervalId) {
+            clearInterval(this.onlineCountIntervalId);
         }
         if (this.player) {
             this.player.destroy();
