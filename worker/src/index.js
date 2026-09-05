@@ -6,7 +6,12 @@
 // Configuration from environment
 const CONFIG = {
     LECTURE_ID: "lecture-01",
-    ALLOWED_ORIGINS: ["https://yourdomain.com", "https://www.yourdomain.com"],
+    ALLOWED_ORIGINS: [
+        "https://mahata.site",
+        "https://www.mahata.site",
+        "https://yourdomain.com",
+        "https://www.yourdomain.com"
+    ],
     RATE_LIMIT_VISITS_PER_MINUTE: 60,
 };
 
@@ -19,7 +24,7 @@ function createHeaders(origin = null) {
     return {
         'Content-Type': 'application/json; charset=utf-8',
         'Access-Control-Allow-Origin': allowedOrigin,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Max-Age': '86400',
         'X-Content-Type-Options': 'nosniff',
@@ -241,6 +246,8 @@ async function handleAdminVisitorCount(request, env) {
  * Get current online visitor count (public)
  */
 async function handleOnlineCount(request, env) {
+    const origin = request.headers.get('Origin');
+
     try {
         // In a real implementation, this would query a Durable Objects counter
         // For now, return a reasonable estimate or 0
@@ -252,16 +259,13 @@ async function handleOnlineCount(request, env) {
             onlineCount: onlineCount,
         }), {
             status: 200,
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8',
-                'Cache-Control': 'no-store, max-age=0',
-            },
+            headers: createHeaders(origin),
         });
     } catch (error) {
         console.error("Online count error:", error);
         return new Response(JSON.stringify({ onlineCount: 0 }), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' },
+            headers: createHeaders(origin),
         });
     }
 }
@@ -271,12 +275,14 @@ async function handleOnlineCount(request, env) {
  * Get total unique visitor count (public)
  */
 async function handleVisitCount(request, env) {
+    const origin = request.headers.get('Origin');
+
     try {
         const db = env.DB;
         if (!db) {
             return new Response(JSON.stringify({ visitCount: 0 }), {
                 status: 200,
-                headers: { 'Content-Type': 'application/json' },
+                headers: createHeaders(origin),
             });
         }
 
@@ -290,17 +296,14 @@ async function handleVisitCount(request, env) {
             visitCount: result?.count || 0,
         }), {
             status: 200,
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8',
-                'Cache-Control': 'no-store, max-age=0',
-            },
+            headers: createHeaders(origin),
         });
 
     } catch (error) {
         console.error("Visit count error:", error);
         return new Response(JSON.stringify({ visitCount: 0 }), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' },
+            headers: createHeaders(origin),
         });
     }
 }
