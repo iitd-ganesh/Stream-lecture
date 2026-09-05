@@ -1,0 +1,22 @@
+{
+  "name": "secure-lecture-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker backend for secure lecture video streaming",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node tests/test.js",
+    "format": "prettier --write \"src/**/*.js\"",
+    "lint": "eslint src/"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "wrangler": "^3.0.0",
+    "prettier": "^3.0.0",
+    "eslint": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

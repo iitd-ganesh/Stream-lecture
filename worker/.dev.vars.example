@@ -1,0 +1,12 @@
+# Cloudflare Worker Environment Variables Example (YouTube Version)
+# Copy this file to .dev.vars and fill in your actual values
+# NEVER commit .dev.vars to version control
+
+# Allowed origin (must match your domain exactly)
+ALLOWED_ORIGIN=http://localhost:8080
+
+# Admin API secret for accessing visitor count (change in production)
+ADMIN_SECRET=dev-secret-change-this
+
+# Database ID (set after creating D1 database)
+DATABASE_ID=placeholder-for-dev

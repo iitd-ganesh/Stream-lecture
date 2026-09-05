@@ -1,0 +1,25 @@
+name = "secure-lecture-worker"
+main = "src/index.js"
+compatibility_date = "2026-09-05"
+type = "service"
+
+# Environment variables binding
+[env.production]
+routes = [
+    { pattern = "yourdomain.com/api/*", zone_name = "yourdomain.com" }
+]
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "lecture_db"
+database_id = "YOUR_DATABASE_ID"
+
+# Cloudflare KV (for rate limiting, optional)
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "YOUR_KV_NAMESPACE_ID"
+
+[build]
+command = "npm install"
+cwd = "."

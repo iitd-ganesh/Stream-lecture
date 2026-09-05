@@ -1,0 +1,24 @@
+{
+  "name": "secure-lecture-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for secure lecture video streaming",
+  "private": true,
+  "scripts": {
+    "serve": "http-server -c-1 -p 8080",
+    "build": "echo 'Frontend is static - no build step required'",
+    "deploy:pages": "gh-pages -d .",
+    "deploy:cloudflare": "wrangler pages publish .",
+    "test": "echo 'Run manual tests in browser'"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "gh-pages": "^5.0.0"
+  },
+  "keywords": [
+    "lecture",
+    "video",
+    "streaming",
+    "cloudflare",
+    "secure"
+  ]
+}

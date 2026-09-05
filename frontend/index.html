@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Secure lecture video streaming via YouTube">
+    <meta name="theme-color" content="#ffffff">
+    <title>Lecture</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="app.js"></script>
+</head>
+<body>
+    <main class="lecture-container">
+        <header class="lecture-header">
+            <p class="lecture-label">LECTURE</p>
+            <h1 class="lecture-title">Introduction to Modern Security Architecture</h1>
+
+            <div class="lecture-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Professor:</span>
+                    <span class="meta-value">Dr. Sarah Mitchell</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Date:</span>
+                    <span class="meta-value" id="lecture-date">05 September 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Duration:</span>
+                    <span class="meta-value">48:32</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="video-section">
+            <div id="video-container" class="video-container">
+                <div id="loading-state" class="loading-state" style="display: none;">
+                    <p>Loading lecture video...</p>
+                </div>
+                <div id="error-state" class="error-state" style="display: none;">
+                    <p id="error-message">Unable to load the lecture video. Please refresh the page.</p>
+                    <button id="retry-button" class="retry-button">Retry</button>
+                </div>
+                <div id="player-wrapper" style="display: none;">
+                    <!-- YouTube iframe will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <footer class="lecture-footer">
+            <p>This lecture is hosted on YouTube.</p>
+        </footer>
+    </main>
+
+    <script>
+        // Configuration - these values are safe to expose
+        const LECTURE_CONFIG = {
+            id: "lecture-01",
+            title: "Introduction to Modern Security Architecture",
+            professor: "Dr. Sarah Mitchell",
+            date: "2026-09-05",
+            duration: "48:32",
+            youtubeVideoId: "YOUR_YOUTUBE_VIDEO_ID" // Unlisted YouTube video ID
+        };
+    </script>
+</body>
+</html>

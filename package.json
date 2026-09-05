@@ -1,0 +1,38 @@
+{
+  "name": "secure-lecture-video-website",
+  "version": "1.0.0",
+  "description": "Production-ready secure lecture video streaming with Cloudflare Stream, Workers, and D1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:all": "npm install && cd worker && npm install && cd ../frontend && npm install && cd ..",
+    "dev:worker": "cd worker && wrangler dev --local",
+    "dev:frontend": "cd frontend && npx http-server -c-1 -p 8080",
+    "deploy:worker": "cd worker && wrangler deploy --env production",
+    "deploy:frontend:pages": "cd frontend && wrangler pages publish . --project-name=lecture",
+    "deploy:frontend:netlify": "cd frontend && npx netlify deploy --prod --dir=.",
+    "test:frontend": "cd frontend && echo 'Run tests in browser'",
+    "test:worker": "cd worker && echo 'Run worker tests'",
+    "lint": "eslint .",
+    "format": "prettier --write '**/*.{js,json,md,css,html}'",
+    "docs": "echo 'See README.md and documentation files'"
+  },
+  "keywords": [
+    "lecture",
+    "video",
+    "streaming",
+    "cloudflare",
+    "secure",
+    "education",
+    "protected"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
